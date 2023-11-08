@@ -1,0 +1,7 @@
+{
+  "extends": "../../../schema/v0/code/tsconfig.json",
+  "compilerOptions": {
+      //"moduleResolution": "node"
+  }
+  
+}
