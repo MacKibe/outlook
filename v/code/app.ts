@@ -27,7 +27,7 @@ import * as mod from "./module.js";
 type replica = { ename: string; cname: string };
 //
 //The user interface, derived from the user class
-interface Iuser extends user{};  
+export interface Iuser extends user{};  
 //
 //The application class provides the mechanism for linking services providers
 //to their corresponding consumers. It is the base of the various mutall-based

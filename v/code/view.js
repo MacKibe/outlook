@@ -1,8 +1,10 @@
-//Resolve the schema classes, viz.:database, columns, mutall e.t.c. 
-import * as schema from "../../../schema/v/code/schema.js";
+// 
+// Define the namespace needed to create svg elements. This is needed by the
+//metavisuo system. Its defined here to prevent cluttering the mataviouo namespace
+export const svgns = "http://www.w3.org/2000/svg";
 //A view is the root of all classes in the outlook library, so, it holds methods 
 //that and properties that all outlook users can access
-class view {
+export class view {
     url;
     // 
     //This is used for indexing a view object to support implementation of the 
@@ -75,7 +77,7 @@ class view {
         if (value === null) {
             //
             //Report teh error
-            throw new schema.mutall_error(`This element (see the console.log) has no attribute named ${name}.`, element);
+            throw new mutall_error(`This element (see the console.log) has no attribute named ${name}.`, element);
         }
         //
         return value;
@@ -92,7 +94,8 @@ class view {
     }
     //
     //Returns the value from an identified input or textarea element.
-    //The function will return null fail if there is no input value.
+    //The function will return null (rather than '' or fail) if there is no input 
+    //value. It returns Error if the value is empty and required
     get_input_value(id) {
         //
         //Get the identified element.
@@ -100,34 +103,46 @@ class view {
         //
         //It must be an input  element or textarea.
         if (!(elem instanceof HTMLInputElement || elem instanceof HTMLTextAreaElement))
-            throw new schema.mutall_error(`'${id}' is not an input or textarea element`);
+            throw new mutall_error(`'${id}' is not an input or textarea element`);
         //
-        //There must be a value in the element.
-        if (elem.value === "")
-            return null;
+        //The desired value is.
+        let value = elem.value === "" ? null : elem.value;
+        //
+        //If the value is required and is null, then return an error
+        const value2 = elem.hasAttribute('required') && value === null
+            ? new Error(`${id} is required`) : value;
         // 
-        //Return the input element value.
-        return elem.value;
+        //Return the desired value.
+        return value2;
     }
     //
-    //Returns the value of the checked radio button that have this given name.
-    //Return null if there is no cehcked radio button
+    //Returns the value of the checked radio button that has the given name.
+    //Return null if there is no checked radio button. If any of the named 
+    //buttons has a required attribute, then an error is retirned if none is 
+    //checked
     get_checked_value(name) {
         //
         //Get the radio button that matches the given name and is checked.
-        const radio = document.querySelector(`input[name='${name}']:checked`);
+        const radio = this.document.querySelector(`input[name='${name}']:checked`);
         //
-        //There must be at least one checked value under the given name.
-        if (radio === null)
-            return null;
+        //Do not continue with further checks if there is no checked radio button
+        if (radio === null) {
+            //
+            //Get all the named radio buttons that have a required attribute
+            const buttons = this.document.querySelectorAll(`input[name='${name}'][required]`);
+            //
+            //Required is true if there is at least one required button
+            return (buttons.length > 0) ? new Error(`${name} is required`) : null;
+        }
         //
         //Ensure that the radio element is a HTMLInputElement.
         if (!(radio instanceof HTMLInputElement))
-            throw new schema.mutall_error(`The input named '${name}' is not a HTMLInputElement`);
+            throw new mutall_error(`The input named '${name}' is not a HTMLInputElement`);
         //
-        //The radio button's value must be set. Is a sign a prooly designed form if not
+        //The radio button's value must be set. It is a sign a poorly designed form 
+        //if not
         if (radio.value === "")
-            throw new schema.mutall_error(`No value found for input named '${name}'`);
+            throw new mutall_error(`No value found for input named '${name}'`);
         //
         //Return the checked value.
         return radio.value;
@@ -142,11 +157,11 @@ class view {
         //
         //Ensure that the select is a HTMLSelectElement.
         if (!(select instanceof HTMLSelectElement))
-            throw new schema.mutall_error(`The element identified by '${id}' is not a HTMLSelectElement.`);
+            throw new mutall_error(`The element identified by '${id}' is not a HTMLSelectElement.`);
         //
         //Ensure that the select element value is set.
         if (select.value === "")
-            throw new schema.mutall_error(`The value of the select element identified by '${id}' is not set.`);
+            throw new mutall_error(`The value of the select element identified by '${id}' is not set.`);
         //
         //Return the selected value
         return select.value;
@@ -211,11 +226,11 @@ class view {
     get_element(id) {
         //
         //Get the identified element from the current browser context.
-        const element = this.document.querySelector(`#${id}`);
+        const element = this.document.getElementById(id);
         //
         //Check the element for a null value
         if (element === null)
-            throw new schema.mutall_error(`The element identified by #${id} not found`);
+            throw new mutall_error(`The element identified by #${id} not found`);
         //
         //Return (found) the element       
         return element;
@@ -229,11 +244,11 @@ class view {
         //
         //If there is more than one element, warn the user
         if (elements.length > 1)
-            throw new schema.mutall_error(`There are ${elements.length} elements selected by ${css}`);
+            throw new mutall_error(`There are ${elements.length} elements selected by ${css}`);
         //
         //Check the elements is empty
         if (elements.length === 0)
-            throw new schema.mutall_error(`The element with selector ${css} not found`);
+            throw new mutall_error(`The element with selector ${css} not found`);
         //
         //Return (the only found) the )HML) element       
         return elements[0];
@@ -258,7 +273,7 @@ class view {
         //
         //se the alternative method to get a mysql-compatible date strin for 
         //now();
-        return view.standardise_date(new Date());
+        return this.standardise_date(new Date());
     }
     //
     //This is a general procedure for standardising conversion of dates to mySQL
@@ -267,7 +282,7 @@ class view {
     //paths of the form: "./x.js" "../x.js", "/a/b/c/x.js". Perhaps its time to
     //learn how to use webpack. For now, use the native Js metod of convering the
     //date to a ISOstring, then replacing the T with a space and Z with noting
-    static standardise_date(date) {
+    standardise_date(date) {
         //
         //Discontinue using the lucon libray
         //return luxon.DateTime.fromJSDate(date).toFormat('YYYY-MM-DD hh:mm:ss');
@@ -288,8 +303,296 @@ class view {
         //accept the .0000 bit? Not sure.
         return str;
     }
+    //Exploit typical layouts of input element on form to extract values. This 
+    //assumes that we can extract enough information from the form to determine, 
+    //e.g.,  
+    //- the type of input, i,e., simple text or use of radio buttons
+    //- if any input is required or not
+    //This information is supplied using dataset technology in HTML using tags 
+    //such as data-required, data-io type, etc.
+    //The given id is that of an envelop tag; the dataset attributes will be 
+    //specified on this element.
+    //The output will be determined by data-required and data-io type attributes
+    //Here is an example of an input that satisfies this arrangement
+    /*
+    <label data-field="username" data-required data-iotype="text">
+        Username:<input type="text">
+    </label>
+    
+    <label data-required>
+        Username:<input type="text" name="username">
+    </label>
+    */
+    get_value(id) {
+        //
+        //Get the identified enveloping element, e.g. the label element in the 
+        //the above example
+        const env = this.get_envelop_element(id);
+        //
+        //Get the io type. Currently only 2 are supported; text and radio. If 
+        //no io type is available, then we assume it is a simple input.
+        const io_type = this.get_io_type(env);
+        //
+        //Use the envelop and io type to get the raw value, string or null. For 
+        //check boxes, if there is nothing checked, the raw value is null. For 
+        //simple input, the null is a zero-length string
+        let raw = this.get_raw_value(env, io_type);
+        //
+        //Determine whether the value is required or not;
+        const is_required = Boolean(env.dataset.required);
+        //
+        //If an input is required and it is empty, return the an error...
+        if (is_required && raw === null)
+            return new Error(`Input '${id}' is required`);
+        //
+        //...otherwise return the raw value
+        return raw;
+    }
+    //Using the same envelop strategy as the get_value(), get the identified
+    //files
+    get_files(id) {
+        //
+        //Get the identified enveloping element, e.g., the label element in the 
+        //the above example
+        const env = this.get_envelop_element(id);
+        //
+        //Use the envelop and io type to get the raw value, string or null. For 
+        //check boxes, if there is nothing checked, the raw value is null. For 
+        //simple input, the null is a zero-length string
+        const file = this.get_files_using_envelop(env);
+        //
+        //Determine whether the value is required or not;
+        const is_required = Boolean(env.dataset.required);
+        //
+        //If an input is required and it is empty, return the an error...
+        if (is_required && file === null)
+            return new Error(`Input '${id}' is required`);
+        //
+        //...otherwise return the file value
+        return file;
+    }
+    //Returns the file under the given envelop
+    get_files_using_envelop(env) {
+        //
+        //Use the envelop to search for an input element of type file
+        const inputs = env.querySelectorAll('input[type="file"]');
+        //
+        //Its an error if none is found
+        if (inputs.length === 0)
+            throw new mutall_error(`No file input element is found under current envelop element`, env);
+        //
+        //It islao an errror if the search result is ambiguous
+        if (inputs.length > 1)
+            throw new mutall_error(`There is more than 1 file input element under curremt envelop`, env);
+        //
+        //Get the only input element
+        const input = inputs[0];
+        //
+        //Return the file if it is defined and there is at least one selection;
+        //otherwise null
+        return input.files ?? null;
+    }
+    //Return the element that matches the given id
+    get_envelop_element(id) {
+        //
+        //Define element variable for supporting identifiaction of the required
+        //envelop
+        let element;
+        //
+        //Try the data-field route first
+        if (element = this.document.querySelector(`*[data-field="${id}"]`))
+            return element;
+        //
+        //Try the normal id route
+        if (element = this.document.getElementById(id)) {
+            //
+            const data_field = element.closest('*[data-field]');
+            //
+            if (data_field)
+                return data_field;
+        }
+        ;
+        //
+        //Try name route
+        const elements = Array.from(this.document.getElementsByName(id));
+        if (elements.length > 0) {
+            //
+            const data_field = elements[0].closest('*[data-field]');
+            //
+            if (data_field)
+                return data_field;
+        }
+        //
+        //Element not found
+        throw new mutall_error(`No envelop element matches '${id}' using the Name, Id or Data-field strategy`);
+    }
+    //Get the io-type from a given envelop element; its found in the data-iotype
+    //attribute. Assume it is 'text' if the attribute is not found
+    get_io_type(env) {
+        //
+        //Get the io-type (string) from the envelop element if it is defined; 
+        //otherwise assume it is simple text
+        const text = env.dataset.iotype ?? 'text';
+        //
+        //Translate the text to a matching io
+        switch (text) {
+            //
+            //Simple text input (without size)
+            case 'text': return { type: 'text' };
+            //
+            //Text area input
+            case 'textarea': return 'textarea';
+            //
+            //Radio input
+            case 'radio': return 'radios';
+            //
+            //Dropdown selector
+            case 'select': return 'select';
+            //
+            //Any orher case is a mistatch and should be reported to the programmer
+            default:
+                throw new mutall_error(`'${text}' is not a valid io_type`);
+        }
+    }
+    //
+    //Use the envelop and io type to get the raw alue as text or null. For 
+    //radios/check boxes and selector if there is nothing checked, the raw value
+    // is null. For simple input, the null is a zero-length, or name 'null' string. 
+    get_raw_value(env, io_type) {
+        //
+        //Translate the iotype to a matching value
+        switch (io_type) {
+            //
+            //Getting input form a radio
+            case 'radios': return this.get_radio_value(env);
+            //
+            //Getting input from a select input / dropdown selector
+            case 'select': return this.get_text_value(env);
+            //
+            //Getting input from a text area
+            case 'textarea': return this.get_text_value(env);
+            //
+            //Handle complex io types, e.g., {type:'text', size:10} 
+            default:
+                //
+                //Test if the io type is of the complext type, e.g., 
+                //{type:'text', size:10} 
+                if (typeof io_type === 'object' && 'type' in io_type) {
+                    //
+                    //Destructure to get the type
+                    const { type } = io_type;
+                    //
+                    //Depending on the type....
+                    switch (type) {
+                        case 'text': return this.get_text_value(env);
+                        default:
+                            throw new mutall_error(`'${type}' is not a valid io-type`);
+                    }
+                }
+                //Any other io type must be is a mismatch and should be reported
+                // as an error
+                throw new mutall_error(`Unable to get the value of io_type '${io_type}'`);
+        }
+    }
+    //
+    //Retrieve value from selector elements such as radio and checkboxes
+    /*
+    <fieldset id="operation" data-iotype="radio" data-required="true">
+        <legend >What do you want to do?</legend>
+        <label>
+            <input type="radio" value ="up" name="option"> Sign Up to be Member
+        </label>
+
+        <label>
+            <input type="radio" value="in" name="option"> Sign In as Member
+        </label>
+        <span class="error"></span>
+    </fieldset>
+    
+    In this case, fieldset is the envlop element
+    */
+    get_radio_value(env) {
+        //
+        //The envelop must have a data-field attribute, from which we can get 
+        //the name associated with the radio element under it
+        const name = env.dataset.field;
+        if (!name)
+            throw new mutall_error(`The envlop enclosing radio buttons must have a data field named the same as the buttons`, env);
+        //
+        //Use the name to formulate a css for isolating radio fields for this 
+        //envelop
+        const css = `input[type="radio"][name="${name}"]`;
+        //
+        //Collect all the radio buttons under this envelop
+        const radios = env.querySelectorAll(css);
+        //
+        //There must be at least 2
+        if (radios.length < 2)
+            throw new mutall_error(`At least 2 radio buttons are expected. ${radios.length} was found. See the console log`, radios);
+        //
+        //Collect all radio buttons that are checked
+        const checkeds = env.querySelectorAll(`${css}:checked`);
+        //
+        //Return a null if none of them is checked
+        if (checkeds.length === 0)
+            return null;
+        //
+        //If more than one is cehcked, this is a poor form design
+        if (checkeds.length >= 2)
+            throw new mutall_error(`Check you form. ${checkeds.length} buttons are checked. Only 1 was expected`);
+        //
+        //Get the (trimmed) value of the checked button
+        const value = checkeds.item(0).value.trim();
+        //
+        //Return null if the input has an empty value, or is explicitly entered
+        //as null
+        return ['', 'null'].includes(value.toLowerCase()) ? null : value;
+    }
+    //
+    //Retrieve value from a child input (of an enveloping element) that has a 
+    //value key
+    get_text_value(env) {
+        //
+        //Select all the elements that are immediate children of the envelop
+        const all_elements = Array.from(env.children);
+        //
+        //Select only those cases that have a value key
+        const elements = all_elements.filter(e => 'value' in e);
+        //
+        //Its a design fault if no element can be found 
+        if (elements.length === 0)
+            throw new mutall_error('No element with a value key found', env);
+        //
+        //It is also a form design fault if more than 1 element is found
+        if (elements.length > 1)
+            throw new mutall_error(`Only 1 value element is expected. ${elements.length} were found`);
+        //
+        //Get the only element's value and trim it
+        const value = elements[0].value.trim();
+        //
+        //Return null if the input has an empty value, or is explicitly entered
+        //as null
+        return ['', 'null', 'undefined'].includes(value.toLowerCase()) ? null : value;
+    }
+    //
+    //Report the errors at the appropriate place in teh current form
+    report_error(id, msg) {
+        //
+        //Use the given id to get the general data field area where to report. 
+        //It must be available
+        const element = this.get_element(id);
+        //
+        //Get the  specific element where to report
+        const report = element.querySelector('.error');
+        //
+        //If there is no place to report, then this is a badly designed form; alert the user
+        if (report === null)
+            throw new mutall_error(`No element for reporting errors for field '${id}'`);
+        //
+        //Now report the error message
+        report.textContent = msg;
+    }
 }
-export { view };
 //A page is a view with display panels
 export class page extends view {
     //
@@ -325,7 +628,7 @@ export class page extends view {
         //null state is never expected because we did replace it in this 
         //application's initializetion
         if (evt.state === null)
-            throw new schema.mutall_error("Null state unexpected");
+            throw new mutall_error("Null state unexpected");
         // 
         //Get the saved view's key
         const key = evt.state;
@@ -336,7 +639,7 @@ export class page extends view {
         //
         //It is an error if the key has no matching view.
         if (new_view === undefined)
-            throw new schema.mutall_error(`This key ${key} has no view`);
+            throw new mutall_error(`This key ${key} has no view`);
         // 
         //Restore the components of the new view
         new_view.restore_view(key);
@@ -363,7 +666,7 @@ export class page extends view {
         //
         //It's an error if the view has not been cached
         if (View === undefined)
-            throw new schema.mutall_error(`This key ${key} has no matching view`);
+            throw new mutall_error(`This key ${key} has no matching view`);
         //
         //Get the root document element. 
         const root = View.document.documentElement;
@@ -465,15 +768,15 @@ export class panel extends view {
         //
         //There must be a target    
         if (targets.length == 0)
-            throw new schema.mutall_error(`No target found with CSS ${this.css}`);
+            throw new mutall_error(`No target found with CSS ${this.css}`);
         //
         //Multiple targets is a sign of an error
         if (targets.length > 1)
-            throw new schema.mutall_error(`Multiple targets found with CSS ${this.css}`);
+            throw new mutall_error(`Multiple targets found with CSS ${this.css}`);
         //
         //The target must be a html element
         if (!(targets[0] instanceof HTMLElement))
-            throw new schema.mutall_error(`
+            throw new mutall_error(`
         The element targeted by CSS ${this.css} must be an html element`);
         //
         //Set the html element and continue painting the panel
@@ -488,5 +791,112 @@ export class panel extends view {
     //so a panel does not need to be opened
     get win() {
         return this.base.win;
+    }
+}
+//
+//A custom alert (to replace the normal js version) using dialog technology
+export function myalert(message) {
+    //
+    //Create a dialog element that is used to serve the message
+    const dlg = document.createElement("dialog");
+    //
+    //Append the dialog to the current document body...step 2. This will be
+    //undone in step 5 below 
+    document.body.appendChild(dlg);
+    //
+    //Append the message to the dialog with the assumption that it is html
+    //formated
+    dlg.innerHTML = message;
+    //
+    //Create a cancel button which is responsible for closing the dialog
+    //
+    //Create button
+    const cancel = document.createElement("button");
+    cancel.textContent = "Cancel";
+    //
+    //Assign onclick listener, that removes the dialog completely -- the 
+    //opposite of step 2 above....step 5
+    cancel.onclick = () => document.body.removeChild(dlg);
+    //
+    //Append the cancel button to the dialog
+    dlg.appendChild(cancel);
+    //
+    //Finally show the created dialog box in a modal version
+    dlg.showModal();
+}
+//
+//This class extends the normal Javascript error object by 
+//alerting the user before logging the same error (and stack trae details) to 
+//the console.
+export class mutall_error extends Error {
+    //
+    //Every error has an error message. The extra information is optional. If
+    //present, it is displayed in the console log, and the user is alerted to this
+    //fact. Typically, the extra is a a complex object, where we can use the 
+    //console log to inspect it.
+    constructor(msg, extra) {
+        //
+        //Create the parent error object
+        super(msg);
+        //
+        //If the extra is available, console log it first
+        if (extra !== undefined)
+            console.log(extra);
+        //
+        //Compile the console invitation
+        const invitation = extra === undefined ? "" : 'See the console.log for further details';
+        //
+        //Alert the user with the error message, expanded with console 
+        //invitation. Hse a dialogbox rather than alert.
+        this.report(`${msg}<br/><br/>${invitation}`);
+    }
+    //Use a dialogbox (hooked to the body of the current docment)to report the
+    //given error message and the invitation to inspect teh console.log for
+    //further details
+    report(msg) {
+        //
+        //Get the document's body where to hook the reporting assembly
+        const body = document.body;
+        //
+        //Create the div assembly to comprise of the 'Open' dialog button
+        //and the dialog box itself. To the assemby:-
+        const assembly = document.createElement('div');
+        body.insertBefore(assembly, body.firstChild);
+        //
+        //Add the dialog box to the assembly.
+        const dlg = document.createElement('dialog');
+        assembly.appendChild(dlg);
+        //
+        //Add the button (for opening the dialogbox to review the error message
+        //when desired) to the top of the body.
+        const open = document.createElement('button');
+        assembly.appendChild(open);
+        open.textContent = 'Open';
+        open.onclick = () => dlg.showModal();
+        //
+        //To the dialog box:-
+        //
+        //Add the 'Close' button for hidding the dialog for reviewing 
+        //later when desired
+        const close = document.createElement('button');
+        dlg.appendChild(close);
+        close.textContent = 'Close';
+        close.onclick = () => dlg.close();
+        //
+        //Add the 'Remove' button for detaching the dialog assemby from the 
+        //document's body
+        const remove = document.createElement('button');
+        dlg.appendChild(remove);
+        remove.textContent = 'Remove';
+        remove.onclick = () => body.removeChild(assembly);
+        //
+        //Add a div place holder for the message string and transfer the message
+        //content.
+        const holder = document.createElement('div');
+        dlg.appendChild(holder);
+        holder.innerHTML = msg;
+        //
+        //Show the dialog modally
+        dlg.showModal();
     }
 }

@@ -17,6 +17,9 @@ import * as io from "../../../schema/v/code/io.js"
 //Group all the available providers and defines a data type for them. This will
 //allow for handling(Hiding and Showing) the credentials.
 type provider_id = 'google' | 'facebook' | 'outlook';
+
+//Keys for data being collected
+type keys = 'name'|'password'|'operation_id'|'provider_id';
    
 //
 //This is a popup page used for authenticating users so 
@@ -74,7 +77,7 @@ export class page extends popup<user> {
         //1. Check the inputs; discontinue if there is an issue
         //
         //Get all the checked inputa
-        const inputs:inputs = <{[key in keys]:schema.basic_value|Error}> this.check_inputs();
+        const inputs =  this.check_inputs();
         //
         //Collect the input values
         const values:Array<schema.basic_value|Error> = Object.values(inputs);
@@ -128,136 +131,6 @@ export class page extends popup<user> {
             name: this.get_input_value('name')?? new Error(`Name must be provided`),
             password:this.get_input_value('password')?? new Error(`Password must be provided`),
             operation_id:this.get_checked_value('operation_id')?? new Error(`Specify the required operation`),
-            provider_id:this.get_checked_value('provider_id')?? new Error(`Specify the provider`)
-        }
-    }
-    
-    
-    //Set the ios of the login panel.
-    async show_panels(){
-        //
-        //Retrieve as an array all the io elements of this page
-        const ios: Array<HTMLElement> = Array.from(this.document.querySelectorAll('data-io'))
-        //
-        //Use the elements to create the ios and set their default values
-        for (const element of ios){
-            //
-            //Create the io. (It is saved it in the global collection of ios)
-            const Io:io.io = io.io.get_io(element);
-            //
-            //Get its default value -- if any; otherwise null
-            const value:schema.basic_value = 
-                //
-                //If the default is defined...
-                element.dataset.default!==undefined  
-                //
-                //...then retirn it
-                ? element.dataset.default
-                //
-                //...otherwise retrn a null
-                : null
-            //
-            //Set the ios's value
-            Io.value = value;    
-        }
-    }
-}
-
-//Define the signing in/up user credentuals
-type credentials = {
-    username:string;
-    password:string;
-    operation_id:'authenticate'|'register'
-}
-
-//Inputs as a function of teh credetials
-type inputs = {[key in keyof credentials]:credentials[key]|Error};
-
-//
-//This is a much simpler popup page used for authenticating users so 
-//that they can be allowed to access the application 
-//services. The page uses the outlook provider, rather than the more general
-//one that uses federated services such google and facebook
-export class simple_page extends popup<user> {
-    //
-    constructor() {
-        //
-        //Use the simpler login page that assumes outlook as the provider
-        super("./simple_login.html");
-    }
-    
-    //Return the logged in user
-    async get_result():Promise<user>{
-        return this.result!;
-    }
-      
-    //Check if we have the correct data before we close the popup. E.g., 
-    //verifying that the required input fields are filled in correctly. In 
-    //addition, use the echecked ata to compile the desired result, user.
-    async check():Promise<boolean> {
-        //
-        //1. Check the inputs; discontinue if there is an issue
-        const credentials:credentials = this.get_credentials();
-        //
-        //Rgietsre or authenticate the user
-        const result:user|Error = await this.check_credentials(credentials);
-        //
-        //If the user is erroneous then report it as an error
-        if (result instanceof Error) this.report(true, result.message);
-        //    
-        //Return sucess if the result is a user
-        return result instanceof user;
-    }
-    
-    //Check the user credentials
-    check_inputs():credentials{
-        //
-        //Get all the checked inputa
-        const inputs = <{[key in keys]:string|Error}> this.get_inputs();
-        //
-        //Collect the input values
-        const values:Array<string|Error> = Object.values(inputs);
-        //
-        //If there is any input issue, discontinue this check
-        if (values.some(value=>value instanceof Error)) return false;
-        //
-        //2. Autheticate or register the user
-        //
-        //Get the users's credentials, i.e., username and password (as strings) 
-        const username = <string>inputs.name; 
-        const password = <string>inputs.password; 
-        const operation_id =  <'register'|'authenticate'>inputs.operation_id;
-        
-        
-    }
-   
-   //Check the user credentials
-    async check_credentials(c:credentials):Promise<user|Error>{
-        //
-        //Define a user, to be completed via registration or authetication.
-        let result:user|Error;
-        //
-        //Create the outlook service provider
-        const Provider:outlook = new outlook(c.username, c.password);
-        //
-        //If the user is a visitor then register him...
-        if (c.operation_id === 'register') result = await Provider.register_user();
-        //    
-        //...otherwise, i.e., If this is a reqular user then use the provider 
-        //to authicate him
-        else result = await Provider.authenticate_user();
-        //   
-        //return teh result
-        return result;
-    }    
-    
-    //Get the login and retirn the inputs as either valid values or error
-    get_inputs():{[key in keys]:string|Error}{
-        //
-        return {
-            username: this.get_input_value('name')?? new Error(`Name must be provided`),
-            password:this.get_input_value('password')?? new Error(`Password must be provided`),
-            operation_id:this.get_checked_value('operation_id')?? new Error(`Specidy the required operation`),
             provider_id:this.get_checked_value('provider_id')?? new Error(`Specify the provider`)
         }
     }

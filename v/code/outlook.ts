@@ -38,7 +38,7 @@ export abstract class quiz<o> extends page{
     //returned, otherwise it is undefined.
     async administer(): Promise<o | undefined>{
         //
-        //Complete constrtuction of this class by running the asynchronous 
+        //Complete construction of this class by running the asynchronous 
         //methods
         await this.initialize();
         //
@@ -104,7 +104,7 @@ export abstract class quiz<o> extends page{
 
     //The following abstract methods support the show process
     //
-    //Check the inputs
+    //Check the inputs and return true if they are all valid
     abstract check():Promise<boolean>;
     
     //Returns a result of the requested type
@@ -232,10 +232,14 @@ export class template extends view {
         //page for us. The window is temporary 
         const win = window.open(this.url)!;
         //
-        //Wait for the page to load 
-        await new Promise(resolve => win.onload = resolve);
+        //Divert attention from the window, in an attempt to crontrol the flashing
+        //win.blur doe does not work; consider using DOM to pen the html
+        
         //
-        //Retrieve the root html of the new documet
+        //Wait for the page to load 
+        await new Promise(resolve => win.onload = () => resolve(true));
+        //
+        //Set the win property for this page
         this.win = win;
     }
     //
@@ -244,10 +248,10 @@ export class template extends view {
     copy(src: string, dest: [view, string]): HTMLElement {
         //
         //Destructure the destination specification
-        const [Page, dest_id] = dest;
+        const [View, dest_id] = dest;
         //
         //1 Get the destination element.
-        const dest_element: HTMLElement = Page.get_element(dest_id);
+        const dest_element: HTMLElement = View.get_element(dest_id);
         //
         //2 Get the source element.
         const src_element: HTMLElement = this.get_element(src);
@@ -259,6 +263,11 @@ export class template extends view {
         //Return the destination painter for chaining
         return dest_element;
     }
+    
+    //Close the template after copying
+    close():void{
+        this.win.close();
+    }    
 
 }
 
@@ -267,9 +276,11 @@ export class template extends view {
 export abstract class popup<o> extends quiz<o>{
     //
     constructor(
+        //
+        //Url to a HTML file that has the content for pasting into the popup
         url: string,
         // 
-        //The popoup window size and location specification.
+        //The popoup window size and location specifications.
         public specs?: string
     ) { super(url); }
 

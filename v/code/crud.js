@@ -15,7 +15,7 @@ import { io } from '../../../schema/v/code/io.js';
 //
 //A crud page is a baby whose mother is, e.g., the application page,
 //another crud page etc.
-class page extends outlook.baby {
+export class page extends outlook.baby {
     mother;
     subject;
     selection;
@@ -884,14 +884,13 @@ class page extends outlook.baby {
         });
     }
 }
-export { page };
 //
 //Modelling the tr as the basic unit for CRUD operations. The cud.page
 //manages the same CRUD operations for bulk operations, i.e., 
 //creating, reviewing, updating and deleting multiple records at once.
 //
 //Was this not re-named to barrel in the lister/barrel/tin/io model?
-class tr {
+export class tr {
     crud;
     pk;
     // 
@@ -926,7 +925,6 @@ class tr {
         this.current__ = tr;
     }
 }
-export { tr };
 //
 //Override the normal error logging with an alert.
 export class crud_error extends Error {
