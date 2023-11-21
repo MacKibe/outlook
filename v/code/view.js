@@ -825,30 +825,30 @@ export function myalert(message) {
     dlg.showModal();
 }
 //
-//This class extends the normal Javascript error object by 
-//alerting the user before logging the same error (and stack trae details) to 
-//the console.
+//This class extends the normal Javascript error object by alerting the user
+// before logging the same error, stack trace details and other user defined 
+//variables values to the console.
 export class mutall_error extends Error {
     //
     //Every error has an error message. The extra information is optional. If
     //present, it is displayed in the console log, and the user is alerted to this
     //fact. Typically, the extra is a a complex object, where we can use the 
     //console log to inspect it.
-    constructor(msg, extra) {
+    constructor(msg, ...extra) {
         //
-        //Create the parent error object
+        //Use the message to initialize the parent error object
         super(msg);
         //
-        //If the extra is available, console log it first
-        if (extra !== undefined)
+        //If the extra is available, then console log it asfirst
+        if (extra.length > 0)
             console.log(extra);
         //
-        //Compile the console invitation
-        const invitation = extra === undefined ? "" : 'See the console.log for further details';
+        //Compile the console log invitation
+        const invitation = extra.length > 0 ? "" : 'See the user  messages in the console.log for further details';
         //
         //Alert the user with the error message, expanded with console 
-        //invitation. Hse a dialogbox rather than alert.
-        this.report(`${msg}<br/><br/>${invitation}`);
+        //invitation.
+        myalert(`${msg}<br/><br/>${invitation}`);
     }
     //Use a dialogbox (hooked to the body of the current docment)to report the
     //given error message and the invitation to inspect teh console.log for
